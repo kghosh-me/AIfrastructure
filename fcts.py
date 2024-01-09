@@ -81,7 +81,7 @@ def getFctAIf():
 
 def reviewText(txt,modelGPT="gpt-3.5-turbo-1106", ow=False,seed=""):
     fcts = getFctAIf()
-    messages, chat_response = f.askFct("You are an expert futurist, specializing in engineering and advisory services in Infrastructure. You review signals that could impact your work sector.","Do signals review of the following text:\n\n"+txt.strip(),fcts,modelGPT=modelGPT, ow=ow,seed=seed) 
+    messages, chat_response = f.askFct("You are an expert futurist, specializing in engineering and advisory services in Infrastructure. You review signals that could impact your work sector.","Do signals review of the following text:\n\n"+txt.strip(),fcts,modelGPT=modelGPT, ow=ow,src="AIFrastructure",seed=seed) 
     df = pd.DataFrame(json.loads(messages[-1]["function_call"]["arguments"])["seeds"])
     df["title"] = json.loads(messages[-1]["function_call"]["arguments"])["title"]
     df["keywords"] = "\n".join(json.loads(messages[-1]["function_call"]["arguments"])["keywords"])
@@ -154,3 +154,24 @@ def getPages():
                 #print(name,"saved")
     else:
         print("All pages already there")
+    return pd.DataFrame(dfURLS,columns=  ["url","hash"])
+
+
+def createIndex(final):
+    small = []
+    for id in final.id.unique():
+        d = final[final.id == id] 
+        TITRE = d.sample(1).title.iloc[0]
+        d["title"] = TITRE
+        d["themes"] = d["themes"].apply(lambda x: str(x).replace("\n",", "))
+        d["title"] = "["+d["title"]+"]("+d["url"]+")"
+        small.append(d[["title"] + list(d.columns[6:])])
+    toprint = pd.concat(small)
+    toprint = toprint.to_markdown(index=None)
+
+    with open("data/Readme.md","r") as f:
+        t = f.read()
+    t = t.replace("TableOfSignals",toprint)
+    with open("Readme.md","w") as f:
+        f.write(t)
+    return "Done"
